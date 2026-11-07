@@ -1,48 +1,50 @@
 # commit-msg-lint
 
-[![PyPI version](https://img.shields.io/pypi/v/trysac-commit-msg-lint)](https://pypi.org/project/trysac-commit-msg-lint/)
-[![License: MIT](https://img.shields.io/pypi/l/trysac-commit-msg-lint)](LICENSE)
-[![CI](https://github.com/Trysac/u172-commit-msg-lint/actions/workflows/ci.yml/badge.svg)](https://github.com/Trysac/u172-commit-msg-lint/actions/workflows/ci.yml)
+Validate commit messages against Conventional Commits 1.0.0 with ten rules, git comment and scissors handling, and conservative automatic fix suggestions for a commit-msg hook.
 
-Validate commit messages against Conventional Commits 1.0.0 with ten rules, git comment and scissors handling, and conservative automatic fix suggestions for a commit-msg hook
+## Features
 
-## Problem
+- **Strict Conventional Commits 1.0.0**: Exact grammar matching for header (`type(scope)!: description`), body, and footers (`BREAKING CHANGE: ...`, `Closes #12`).
+- **Ten deterministic rules**: C001 through C010 with structured findings sorted by line and rule ID.
+- **Git-aware**: Automatically strips git comments (`#`), strips everything after the scissors line (`# ------------------------ >8 ------------------------`), and ignores default Git merge and revert commits.
+- **Safe suggestions**: Proposes targeted fixes (alias mapping, missing space after colon, trailing period removal, missing blank line insertion) only when the resulting message lints cleanly.
+- **Hook and CLI**: Usable directly as `.git/hooks/commit-msg` with optional `--fix` mode.
+- **Zero runtime dependencies**: Pure Python standard library.
 
-Describe in two or three sentences the concrete problem this utility solves, who hits it, and what
-they do today without it. Replace this paragraph when the first real feature lands.
+## Installation
 
-## Install
-
-```sh
-pip install trysac-commit-msg-lint
-# or
-uv add trysac-commit-msg-lint
+```bash
+pip install commit-msg-lint
 ```
 
-Requires Python 3.10 or newer. No runtime dependencies.
-
-## Usage
+## Usage Example
 
 ```python
-import commit_msg_lint
+from commit_msg_lint import Config, lint, parse, suggest
 
-# normalize() trims surrounding whitespace and lower-cases the text.
-print(commit_msg_lint.normalize("  Hello World "))  # -> "hello world"
+commit = parse("feat(api)!: add v2 endpoint\n\nBody text\n\nBREAKING CHANGE: v1 removed\nRefs: #12")
+assert commit.type == "feat" and commit.breaking is True
 
-# Blank input is rejected explicitly instead of returning an empty string.
-try:
-    commit_msg_lint.normalize("   ")
-except ValueError as exc:
-    print(f"rejected: {exc}")
+findings = lint("Fix: correct rounding.")
+# [Finding(rule='C003', ...), Finding(rule='C005', ...)]
+
+fixed = suggest("Fix: correct rounding.")
+assert fixed == "fix: correct rounding"
 ```
 
-## Documentation
+## Public API Summary
 
-- [Architecture](docs/ARCHITECTURE.md) and [decisions](docs/decisions/)
-- [Testing](docs/TESTING.md) and [security](docs/SECURITY.md)
-- [Project record](docs/PROJECT.md) and [stack](docs/STACK.md)
-- [Changelog](CHANGELOG.md) and [contributing guide](CONTRIBUTING.md)
+- `parse(message: str) -> Commit`: Parses input into a `Commit` object.
+- `Config`: Configuration dataclass for linting (types, scopes, require_scope, max_header, ignore_merges).
+- `lint(message: str, config: Config = Config()) -> list[Finding]`: Returns rule violations, sorted by line and rule ID.
+- `suggest(message: str, config: Config = Config()) -> str | None`: Returns a suggested fix string or `None` if no fix is possible or safe.
+- `CommitLintError`: Exception raised for inputs exceeding 65,536 bytes or invalid format.
+- `Commit`, `Finding`: Dataclasses representing parsed state and rule violations.
 
-## License
+## Why not conventional-commits/commitlint?
 
-[MIT](LICENSE) (c) 2026 Miguel Gomez
+This utility provides an exact grammar-based Conventional Commits 1.0.0 implementation without requiring a Node.js toolchain, and offers safe, deterministic fix suggestions that only apply if they result in a clean lint.
+
+## Security
+
+See [docs/SECURITY.md](docs/SECURITY.md) for details on the threat model.
