@@ -19,6 +19,9 @@ classifiers = [
 ]
 dependencies = []
 
+[project.scripts]
+commit-msg-lint = "commit_msg_lint.__main__:main"
+
 [project.urls]
 Homepage = "https://github.com/Trysac/u172-commit-msg-lint"
 Source = "https://github.com/Trysac/u172-commit-msg-lint"

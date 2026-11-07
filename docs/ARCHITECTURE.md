@@ -1,29 +1,31 @@
 # Architecture
 
-## Purpose
+## Design Overview
 
-`trysac-commit-msg-lint` is a small, dependency-free Python library: Validate commit messages against Conventional Commits 1.0.0 with ten rules, git comment and scissors handling, and conservative automatic fix suggestions for a commit-msg hook
+`commit-msg-lint` is an enterprise-grade Conventional Commits 1.0.0 parser and linter written in Python using only the standard library.
 
-## Shape
+### Pipeline
 
-```text
-caller code --> commit_msg_lint (public API in __init__.py)
-                    |
-                    +-- pure functions, no I/O, no global state
-```
-
-- **Public API**: the names listed in `__all__` of `src/commit_msg_lint/__init__.py`. Anything else is
-  internal and may change without a major version.
-- **Errors**: invalid input raises built-in exceptions (`ValueError`, `TypeError`) with a clear
-  message; the library never prints or exits.
-- **Side effects**: none. If a feature needs I/O, isolate it in its own module behind a small
-  interface and record the choice in an ADR.
-
-## Quality contract
-
-`scripts/check.py` is the single definition of the gates; `fabrica.json` tells the factory and CI
-how to run it. See [TESTING.md](TESTING.md).
-
-## Decisions
-
-Architecture decisions are recorded in [decisions/](decisions/) as numbered ADRs.
+1. **Input Size Check**: Every entrypoint (`parse`, `lint`, `suggest`, `main`) enforces `MAX_INPUT_BYTES = 65_536`.
+2. **Git Cleaning**:
+   - Normalizes CRLF and CR to LF.
+   - Removes git scissors comments (`# ------------------------ >8 ------------------------` and all subsequent content).
+   - Drops lines starting with `#`.
+   - Drops trailing blank lines.
+3. **Merge and Revert Bypass**:
+   - If `config.ignore_merges` is active, commits matching git defaults (`Merge `, `Revert "`, `fixup!`, `squash!`) pass immediately.
+4. **Header and Body Parsing**:
+   - Header regex: `^(?P<type>[A-Za-z]+)(\((?P<scope>[^()\r\n]+)\))?(?P<bang>!)?: (?P<desc>\S.*)$`.
+   - Blank line check: Line 2 must be blank if body/footers exist (`C007`).
+   - Trailing footers regex: `^(BREAKING CHANGE|[A-Za-z][A-Za-z0-9-]*)(: | #)(.*)$`.
+   - Continuation lines within a footer block are merged into the active footer value.
+5. **Deterministic Rule Engine**:
+   - Rules evaluate C001 through C010.
+   - When `C001` fires, only `C001` and `C007` are evaluated.
+   - Results are sorted by `(line, rule)`.
+6. **Safe Auto-Suggestion Engine**:
+   - Applies aliases (`feature` -> `feat`, `bugfix` / `fixes` -> `fix`, `doc` -> `docs`, `tests` -> `test`).
+   - Inserts missing space after `:`.
+   - Strips single trailing `.`;
+   - Inserts blank line after line 1.
+   - Returns suggestion only if original had findings and suggestion passes all rules cleanly.

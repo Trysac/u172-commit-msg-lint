@@ -9,4 +9,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Add Conventional Commits 1.0.0 parser, linter with rules C001-C010, auto-fix suggest engine, and commit-msg CLI hook.
 - Initial project structure from the factory utility template.

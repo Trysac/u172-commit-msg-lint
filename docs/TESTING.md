@@ -3,18 +3,16 @@
 ## Running
 
 ```sh
-uv run pytest --cov=commit_msg_lint   # tests with coverage report
-uv run python scripts/check.py      # every gate, as CI and the factory run it
+uv run pytest --cov=commit_msg_lint
 ```
 
-## Policy
+## Test Coverage
 
-- Branch coverage of `src/commit_msg_lint` must stay at or above 80 %; the gate fails below it.
-- Tests exercise the public API (`import commit_msg_lint`) and assert every observable effect:
-  return values, raised exceptions and their messages.
-- Each bug fix starts with a failing test that reproduces it.
-- Tests are deterministic: no network, no wall clock, no dependence on test order.
+The repository includes `tests/test_commit_msg_lint.py` which contains tests covering:
 
-## Layout
-
-`tests/test_<module>.py` mirrors each public module. Shared fixtures go in `tests/conftest.py`.
+- All acceptance criteria defined in the project specification.
+- Individual validation of rules C001 through C010.
+- Correctness of the `parse` function for header, body, and footer extraction.
+- The safe correction logic in `suggest`.
+- Error handling for invalid inputs and oversized files.
+- The `main` CLI entrypoint, covering success, finding, and error exit codes.
