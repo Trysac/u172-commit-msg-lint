@@ -13,8 +13,10 @@ Validate commit messages against Conventional Commits 1.0.0 with ten rules, git 
 
 ## Installation
 
+Not published to PyPI yet. Install it from GitHub:
+
 ```bash
-pip install commit-msg-lint
+pip install "git+https://github.com/Trysac/u172-commit-msg-lint"
 ```
 
 ## Usage Example
